@@ -47,7 +47,8 @@
 
 <br><br>
 
-<input type="file" id="fileInput" accept="video/*">
+<input type="text" id="videoURL" placeholder="Paste direct video link (.mp4) here">
+<button onclick="loadVideo()">Load Video</button>
 <video id="videoPlayer" controls></video>
 
 <h3>Chat</h3>
@@ -139,6 +140,32 @@ document.getElementById("fileInput").addEventListener("change", function (e) {
   if (!file) return;
   video.src = URL.createObjectURL(file);
 });
+  // your existing JS code here
+
+
+function loadVideo() {
+    const url = document.getElementById("videoURL").value;
+    if (!url) {
+        alert("Paste a valid video link");
+        return;
+    }
+
+    video.src = url;
+    video.load();
+
+    database.ref("rooms/" + roomId + "/video").set({
+        url: url
+    });
+}
+
+database.ref("rooms/" + roomId + "/video").on("value", (snapshot) => {
+    const data = snapshot.val();
+    if (data && data.url) {
+        video.src = data.url;
+        video.load();
+    }
+});
+
 </script>
 
 </body>
