@@ -79,6 +79,14 @@ const video = document.getElementById("videoPlayer");
 
 window.joinRoom = function () {
   currentRoom = document.getElementById("roomInput").value;
+
+database.ref("rooms/" + currentRoom + "/video").on("value", (snapshot) => {
+    const data = snapshot.val();
+    if (data && data.url) {
+        video.src = data.url;
+        video.load();
+    }
+});
   if (!currentRoom) return alert("Enter room ID");
 
   const syncRef = ref(db, "rooms/" + currentRoom + "/sync");
