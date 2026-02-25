@@ -153,12 +153,12 @@ function loadVideo() {
     video.src = url;
     video.load();
 
-    database.ref("rooms/" + roomId + "/video").set({
+    database.ref("rooms/" + currentRoom + "/video").set({
         url: url
     });
 }
 
-database.ref("rooms/" + roomId + "/video").on("value", (snapshot) => {
+database.ref("rooms/" + currentRoom + "/video").on("value", (snapshot) => {
     const data = snapshot.val();
     if (data && data.url) {
         video.src = data.url;
