@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SyncStream Lite</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+    video {
+      width: 100%;
+      max-width: 500px;
+      border-radius: 12px;
+      margin-top: 10px;
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px;
+      border-radius: 8px;
+      border: none;
+    }
+    button {
+      background: #00c3ff;
+      color: black;
+      font-weight: bold;
+    }
+    #chatBox {
+      max-height: 200px;
+      overflow-y: auto;
+      background: #222;
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<h2>SyncStream Lite</h2>
+
+<input type="text" id="roomInput" placeholder="Enter Room ID">
+<button onclick="joinRoom()">Join Room</button>
+
+<br><br>
+
+<input type="file" id="fileInput" accept="video/*">
+<video id="videoPlayer" controls></video>
+
+<h3>Chat</h3>
+<div id="chatBox"></div>
+<input type="text" id="chatInput" placeholder="Type message">
+<button onclick="sendMessage()">Send</button>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, push, onValue, onChildAdded } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBhI560Q7xhlnebtkKQm4Hq2z23gGtrjcA",
+  authDomain: "sync-stream-88f6e.firebaseapp.com",
+  authDomain: "sync-stream-88f6e.firebaseapp.com",
+  databaseURL: "https://sync-stream-88f6e-default-rtdb.firebaseio.com",
+  projectId: "sync-stream-88f6e",
+  storageBucket: "sync-stream-88f6e.firebasestorage.app",
+  messagingSenderId: "210378460611",
+  appId: "1:210378460611:web:dd80252d8ac504da188176"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+let currentRoom = "";
+const video = document.getElementById("videoPlayer");
+
+window.joinRoom = function () {
+  currentRoom = document.getElementById("roomInput").value;
+  if (!currentRoom) return alert("Enter room ID");
+
+  const syncRef = ref(db, "rooms/" + currentRoom + "/sync");
+
+  onValue(syncRef, (snapshot) => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    if (Math.abs(video.currentTime - data.time) > 1) {
+      video.currentTime = data.time;
+    }
+
+    if (data.playing) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  });
+
+  const chatRef = ref(db, "rooms/" + currentRoom + "/chat");
+  onChildAdded(chatRef, (snapshot) => {
+    const msg = snapshot.val();
+    document.getElementById("chatBox").innerHTML += "<div>" + msg + "</div>";
+  });
+
+  alert("Joined room!");
+};
+
+video.addEventListener("play", () => {
+  updateSync(true);
+});
+
+video.addEventListener("pause", () => {
+  updateSync(false);
+});
+
+video.addEventListener("seeked", () => {
+  updateSync(!video.paused);
+});
+
+function updateSync(isPlaying) {
+  if (!currentRoom) return;
+  set(ref(db, "rooms/" + currentRoom + "/sync"), {
+    time: video.currentTime,
+    playing: isPlaying
+  });
+}
+
+window.sendMessage = function () {
+  const input = document.getElementById("chatInput");
+  if (!input.value) return;
+
+  push(ref(db, "rooms/" + currentRoom + "/chat"), input.value);
+  input.value = "";
+};
+
+document.getElementById("fileInput").addEventListener("change", function (e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  video.src = URL.createObjectURL(file);
+});
+</script>
+
+</body>
+</html>
